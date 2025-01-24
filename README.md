@@ -1,31 +1,40 @@
 # 🤖 AI-Powered Financial Dashboard
 
 ## Overview
-This is an advanced financial analysis dashboard built with Streamlit, leveraging AI and machine learning techniques to provide comprehensive stock and cryptocurrency insights.
+An advanced financial analysis dashboard built with Streamlit and Google AI, providing comprehensive insights for stocks, cryptocurrencies, and forex trading.
 
 ## 🌟 Features
 
+### Market Analysis Modes
+- Support for multiple trading types:
+  - Stocks
+  - Cryptocurrencies
+  - Forex Trading
+
 ### Technical Analysis
 - Interactive Candlestick Charts
-- Multiple Technical Indicators:
+- Advanced Technical Indicators:
   - Simple Moving Average (SMA)
   - Exponential Moving Average (EMA)
   - Bollinger Bands
   - Volume-Weighted Average Price (VWAP)
+  - Relative Strength Index (RSI)
+  - Moving Average Convergence Divergence (MACD)
+  - Stochastic Oscillator
+  - Average Directional Index (ADX)
 
-### Advanced Technical Indicators
-- Relative Strength Index (RSI)
-- Moving Average Convergence Divergence (MACD)
-- Stochastic Oscillator
-- Average Directional Index (ADX)
+### AI-Powered Analysis
+- Google Gemini AI Integration
+- Comprehensive market trend analysis
+- Sentiment analysis
+- Investment strategy recommendations
+- Risk assessment
+- Potential entry/exit point identification
 
-### AI-Powered Forecasting
+### Forecasting
 - LSTM-based Price Forecasting
 - Customizable forecast duration (1-365 days)
 - Machine Learning Price Prediction
-
-### AI Analysis
-- Chart analysis using advanced AI models
 
 ## 🛠 Prerequisites
 
@@ -42,8 +51,12 @@ This is an advanced financial analysis dashboard built with Streamlit, leveragin
 - numpy
 - tensorflow
 - scikit-learn
-- ta-lib
-- ollama
+- google-generativeai
+- PIL
+- python-dotenv
+
+### AI Services
+- Google AI Studio API Key (required)
 
 ## 🚀 Installation
 
@@ -64,38 +77,55 @@ source .venv/bin/activate  # On Windows use `.venv\Scripts\activate`
 pip install -r requirements.txt
 ```
 
+4. Set up environment variables:
+- Copy `.env.example` to `.env`
+- Add your Google AI Studio API Key
+
 ## 🖥 Running the Dashboard
 ```bash
 streamlit run dashboard.py
 ```
 
 ## 📊 Usage Guide
-1. Enter Stock/Crypto Ticker
-    * Supports stocks (e.g., TSLA) and cryptocurrencies (e.g., BTC-USD)
-    * Check Yahoo Finance for available tickers
-2. Select Date Range
-    * Choose start and end dates for historical data
-3. Technical Analysis
-    * Select from various technical indicators
-    * Customize chart view
-4. Forecasting
-    * Set forecast duration
-    * Generate LSTM-based price predictions
-
+1. Select Trading Type
+   - Choose between Stocks, Cryptocurrencies, or Forex
+2. Enter Trading Symbol
+   - Supports various market symbols
+   - Verify symbol accuracy on respective platforms
+3. Select Date Range
+   - Choose historical data timeframe
+4. Technical Analysis
+   - Select from multiple technical indicators
+   - Customize chart visualization
+5. AI-Powered Features
+   - Run AI Analysis for comprehensive insights
+   - Generate sentiment analysis
+   - Get investment recommendations
 
 ## 🤖 AI Features
-*   Advanced chart analysis
-*   Machine learning price forecasting
-
+- Advanced chart interpretation
+- Market sentiment analysis
+- Strategic investment recommendations
+- Risk assessment
 
 ## 🔒 Security Notes
-* Ensure you have the latest security updates
-* Use virtual environments
-* Be cautious with API keys and sensitive information
+- Protect your API keys
+- Use environment variables
+- Keep dependencies updated
+- Use virtual environments
 
 ## 🚧 Limitations
-* Forecasts are predictive and not guaranteed
-* Requires sufficient historical data
-* Performance depends on market conditions
+- AI recommendations are predictive
+- Requires reliable market data
+- Performance varies with market conditions
 
-## NOTE: You have to install ollama and download the model locally to use this app.
+## 📝 Notes
+- Ensure stable internet connection
+- API usage may incur costs
+- Recommendations are for informational purposes only
+
+## 🌐 Contributing
+Contributions, issues, and feature requests are welcome!
+
+## 📄 License
+[Specify your license here]

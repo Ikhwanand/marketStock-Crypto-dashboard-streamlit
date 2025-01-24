@@ -4,9 +4,9 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd 
 import plotly.graph_objects as go
-import ollama
-import tempfile
-import base64
+# import ollama
+# import tempfile
+# import base64
 import os
 from datetime import datetime
 import tensorflow as tf 
@@ -14,6 +14,25 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import ta
 from plotly.subplots import make_subplots
+from dotenv import load_dotenv
+import google.generativeai as genai
+from phi.agent import RunResponse
+from phi.agent import Agent
+from phi.model.google import Gemini
+from phi.tools.googlesearch import GoogleSearch 
+from phi.tools.yfinance import YFinanceTools
+import PIL.Image
+
+
+load_dotenv()
+
+# Configuration Gemini AI
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+genai.configure(api_key=GOOGLE_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+
+
 
 # Set up Streamlit app
 st.set_page_config(page_title="Stock Dashboard", layout="wide", page_icon=':chart_with_upwards_trend:')
@@ -21,11 +40,39 @@ st.title('🤖 AI-Powered Technical Analysis Dashboard')
 st.sidebar.header('Configuration')
 
 # Input for stock ticker and date range
-ticker = st.sidebar.text_input('Enter Stock or Crypto Ticker, for Stock (e.g. TSLA) and for Crypto (e.g. BTC-USD). You can check in yahoo finance for more options.')
+type_trading=st.sidebar.selectbox('Select type of trading', ('Crypto', 'Stock', 'Forex'))
+ticker = st.sidebar.text_input('Enter Stock or Crypto Ticker, for Stock (e.g. TSLA) and for Crypto (e.g. BTC-USD). You can check in yahoo finance for more options and make sure the symbol is right.')
 start_date = st.sidebar.date_input('Start Date', value=pd.to_datetime('2023-01-01'))
 end_date = st.sidebar.date_input('End Date', value=pd.to_datetime(datetime.now().strftime('%Y-%m-%d')))
 forecast_days = st.sidebar.number_input('Forecast Days', min_value=1, max_value=365, value=30)
 
+# Ensure plot directory exists
+PLOT_DIR = os.path.join(os.path.dirname(__file__), 'plot')
+os.makedirs(PLOT_DIR, exist_ok=True)
+
+def save_plot_to_folder(fig, filename):
+    """
+    Save a plot to the dedicated plot folder
+    
+    Args:
+        fig (plotly.graph_objs._figure.Figure): Plotly figure to save
+        filename (str): Filename for the plot
+    
+    Returns:
+        str: Full path to the saved plot
+    """
+    # Ensure filename has .png extension
+    if not filename.lower().endswith('.png'):
+        filename += '.png'
+    
+    # Generate full path
+    plot_path = os.path.join(PLOT_DIR, filename)
+    
+    # Save the plot
+    fig.write_image(plot_path)
+    
+    return plot_path
+    
 
 
 # Forecasting function
@@ -316,31 +363,162 @@ if 'data' in st.session_state:
     st.subheader('AI-Powered Analysis')
     if st.button('Run AI Analysis'):
         with st.spinner('Analyzing the chart, please wait...'):
+            # If your model can read the image encode base64 you can uncomment the code below. In this case I use Gemini, Gemini can't read image based encode64
             # Save chart as a temporary image
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmpfile:
-                fig.write_image(tmpfile.name)
-                tmpfile_path = tmpfile.name 
+            # with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmpfile:
+            #     fig.write_image(tmpfile.name)
+            #     tmpfile_path = tmpfile.name 
                 
             
-            # Read image and encode to Base64
-            with open(tmpfile_path, 'rb') as image_file:
-                image_data = base64.b64encode(image_file.read()).decode('utf-8')
+            # # Read image and encode to Base64
+            # with open(tmpfile_path, 'rb') as image_file:
+            #     image_data = base64.b64encode(image_file.read()).decode('utf-8')
             
-            # Prepare AI analysis request
+            
+            # # Check if fig_advantages exists and prepare combined analysis
+            # combined_images_data = [image_data]
+            
+            # # If fig_advantages exists, add it to the analysis
+            # if 'fig_advanced' in locals():
+            #     # Save fig_advantages to a temporary file
+            #     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmpfile_advanced:
+            #         fig_advanced.write_image(tmpfile_advanced.name)
+            #         tmpfile_advanced_path = tmpfile_advanced.name
+                    
+            #     # Read advantages image and encode to Base64
+            #     with open(tmpfile_advanced_path, 'rb') as advanced_image_file:
+            #         advanced_image_data = base64.b64encode(advanced_image_file.read()).decode('utf-8')
+                    
+            #     # Add advantages image to combined images
+            #     combined_images_data.append(advanced_image_data)
+                
+                    
+            
+            # Prepare comprehensive AI analysis request
             messages = [{
                 'role': 'user',
-                'content': """You are a financial analyst with expertise in technical analysis. Analyze the given chart and provide a detailed report on the market trends, potential entry and exit points, and any other relevant insights.
-                    Analyze the chart's technical indicators and provide a buy/hold/sell recommendation.
-                    Base your recommendation only on the candlestick chart and the displayed technical indicators.
-                    First, provide the recommendation, then, provide your detailed reasoning.
-                """,
-                'images': [image_data]
+                'content': f"""Financial Analysis Task: Comprehensive Investment Insights
+                        Analyze the following images of {type_trading} {ticker} charts.
+                        Use the saved chart images for your technical analysis.
+                        
+                        Provide a comprehensive analysis including:
+                        - Market trend interpretation
+                        - Technical indicator analysis
+                        - Fundamental analysis
+                        - Buy/Hold/Sell recommendation
+                        - Risk assessment
+                        - Potential entry/exit points
+                        """,
+                # 'images': [image_data for image_data in combined_images_data]
             }]
-            response = ollama.chat(model='llama3.2-vision', messages=messages) # Replace 'model' with the appropriate model name for your Ollama instance
+            
+            # Add all images to the analysis request
+            # You can uncomment if you use encode64 based image
+            # for idx, img_data in enumerate(combined_images_data, 1):
+            #     messages[0]['content'] += f"\n[Image {idx}]\n {img_data}]"
+            
+            # Uncomment this code below if you want to use ollama
+            # response = ollama.chat(model='llama3.2-vision', messages=messages) # Replace 'model' with the appropriate model name for your Ollama instance
+            
+            plot_path1 = save_plot_to_folder(fig, f'{ticker}_chart.png')
+            plot_path2 = save_plot_to_folder(fig_advanced, f'{ticker}_advanced_analysis_chart.png')
+            
+            chart1 = PIL.Image.open(plot_path1)
+            chart2 = PIL.Image.open(plot_path2)
+            
+
+            # Add the plot paths to the messages
+            
+            response = model.generate_content([messages[0]['content'], chart1, chart2])
             
             # Display AI analysis
             st.write('**AI Analysis Results:**')
-            st.write(response['message']['content'])
+            st.write(response.text)
             
             # Clean up temporary file
-            os.remove(tmpfile_path)
+            # os.remove(tmpfile_path)
+        
+    st.subheader('AI-Powered Sentiment Analysis')
+    if st.button('Run Sentiment Analysis'):
+        with st.spinner('Generating sentiment analysis...'):
+            from sentiment_agent import agent_team
+            type_trading_edit = ''
+            if type_trading == 'Forex':
+                type_trading_edit = 'currencies pair'
+            elif type_trading == 'Crypto':
+                type_trading_edit = 'cryptocurrency coin'
+            elif type_trading == 'Stock':
+                type_trading_edit = 'stock'
+            
+            # Sentiment Agent
+            sentiment_agent = Agent(
+                name="Sentiment Agent",
+                role="Search and interpret news articles.",
+                model=Gemini(id="gemini-1.5-flash", api_key=GOOGLE_API_KEY),
+                tools=[GoogleSearch()],
+                instructions=[
+                    f"Find relevant news articles for {ticker} and analyze the sentiment.",
+                    "Provide sentiment scores from 1 (negative) to 10 (positive) with reasoning and sources."
+                    "Cite your sources. Be specific and provide links."
+                ],
+                show_tool_calls=True,
+                markdown=True,
+            )
+
+            # Finance Agent
+            finance_agent = Agent(
+                name="Finance Agent",
+                role="Get financial data and interpret trends.",
+                model=Gemini(id="gemini-1.5-flash", api_key=GOOGLE_API_KEY),
+                tools=[YFinanceTools(stock_price=True, analyst_recommendations=True, company_info=True)],
+                instructions=[
+                    "Retrieve stock prices, analyst recommendations, and key financial data.",
+                    "Focus on trends and present the data in tables with key insights."
+                ],
+                show_tool_calls=True,
+                markdown=True,
+            )
+
+            # Analyst Agent
+            analyst_agent = Agent(
+                name="Analyst Agent",
+                role="Ensure thoroughness and draw conclusions.",
+                model=Gemini(id="gemini-1.5-flash", api_key=GOOGLE_API_KEY),
+                instructions=[
+                    "Check outputs for accuracy and completeness.",
+                    "Synthesize data to provide a final sentiment score (1-10) with justification."
+                ],
+                show_tool_calls=True,
+                markdown=True,
+            )
+
+            # Team of Agents
+            agent_team = Agent(
+                model=Gemini(id="gemini-1.5-flash", api_key=GOOGLE_API_KEY),
+                team=[sentiment_agent, finance_agent, analyst_agent],
+                instructions=[
+                    "Combine the expertise of all agents to provide a cohesive, well-supported response.",
+                    "Always include references and dates for all data points and sources.",
+                    "Present all data in structured tables for clarity.",
+                    "Explain the methodology used to arrive at the sentiment scores."
+                ],
+                show_tool_calls=True,
+                markdown=True,
+            )
+            
+            from datetime import datetime
+            date = datetime.now().strftime("%Y-%m-%d")
+
+                
+            response: RunResponse = agent_team.run(
+                    f"""Analyze the sentiment for the following {type_trading_edit} for one week before the day {date}: {ticker} \n\n"
+                    1. **Sentiment Analysis**: Search for relevant news articles and interpret the sentiment for each company. Provide sentiment scores on a scale of 1 to 10, explain your reasoning, and cite your sources.\n\n
+                    2. **Financial Data**: Analyze stock price movements, analyst recommendations, and any notable financial data. Highlight key trends or events, and present the data in tables.\n\n
+                    3. **Consolidated Analysis**: Combine the insights from sentiment analysis and financial data to assign a final sentiment score (1-10) for each company. Justify the scores and provide a summary of the most important findings.\n\n
+                    Ensure your response is accurate, comprehensive, and includes references to sources with publication dates.""",
+                    stream=False
+                )
+            
+            st.write('**AI Sentiment Analysis Results:**')
+            st.write(response.content)
+            
